@@ -3,7 +3,7 @@ import { farmConfig } from './configs/farm'
 import { coffeeConfig } from './configs/coffee'
 import { pizzaConfig } from './configs/pizza'
 import { mineConfig } from './configs/mine'
-import { bakeryConfig } from './configs/teasers'
+import { bakeryConfig } from './configs/bakery'
 
 /** Ordered list — index defines the unlock chain. */
 export const GAMES: GameConfig[] = [

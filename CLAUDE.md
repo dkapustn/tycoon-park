@@ -57,7 +57,8 @@ PWA-аркада из тематических idle-clicker тайкунов. В
   чтобы работала кнопка «назад». В шапке игры — своя кнопка ‹ (нужна для iOS).
 - Цикл: `games/engine/useIdleLoop.ts` — RAF-тик (коммит ~10/с) + капнутый
   офлайн-докоп (≤120с). Тап-цель ловит `pointerdown` (не `click`!).
-- **Мини-игры (не кликеры).** У `GameConfig` есть поле `kind?: 'idle'|'farm'|'coffee'|'pizza'|'mine'`.
+- **Мини-игры (не кликеры).** У `GameConfig` есть поле `kind?: 'idle'|'farm'|'coffee'|'pizza'|'mine'|'bakery'`.
+  Все 5 игр витрины — настоящие мини-игры (тизеров/`teasers.ts` больше нет).
   Роутинг — `GameScreen` в `App.tsx` (switch по `kind`); `idle` → старый
   `<IdleGame>`. Так в одну витрину уживаются разные движки; новую игру-мини
   делаем тем же приёмом — новый `kind` + свой компонент + свой стор.
@@ -133,6 +134,20 @@ PWA-аркада из тематических idle-clicker тайкунов. В
     `components/game/mine/` (`MineGame`, `RockFace` — тап-цель с HP-баром жилы,
     `MineShopSheet`, `WelcomeBackModal`). Стат-ключ `oresMined`, самоцветы бьют
     `treasuresFound`. Цель 90k (~10 мин активной игры, диамант — пост-гейм).
+- **Пекарня** (`kind:'bakery'`) — мини-игра «спрос и предложение» (5-я, финал):
+  - Данные: `games/bakery/pastries.ts` (`PASTRIES`, `BAKERY_UPGRADES` — печь/
+    тестомес/витрина/зал/реклама/авто-пекарь/продавец + премиум 💎 рецепт/бренд/
+    глазурь; деривативы `ovenCount/shelfCap/seatCount/bakeMs/batchOf/arrivalMs`).
+  - Состояние: ОТДЕЛЬНЫЙ стор `store/useBakeryStore.ts`, persist `tycoon-bakery-v1`
+    (хранит `shelf` сток + upgrades/статы; живые `baking`/`customers` не
+    персистятся). Dev-хук `window.__bakery`.
+  - Цикл: тап по выпечке = поставить партию в печь → готово → +`batch` на витрину
+    (склад с лимитом `shelfCap`). Гости приходят с заказом-КОМБО (несколько видов
+    выпечки); тап по гостю = выдать заказ, если всё есть на витрине → монеты +
+    чаевые. Авто-пекарь/продавец автоматизируют (только онлайн, оффлайна нет —
+    idle только у Шахты). Стат-ключ `pastriesSold`. Цель 95k (~10-12 мин).
+  - Луп: `games/bakery/useBakeryTick.ts` (~7/с). Компоненты `components/game/
+    bakery/` (`BakeryGame` с рядом печей, `CustomerCard` с комбо-заказом, `BakeryShopSheet`).
 
 ## Превью (как «видеть» приложение)
 - Preview MCP читает `C:\cabbage\Projects\.claude\launch.json` (НЕ папку проекта).

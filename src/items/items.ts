@@ -206,7 +206,58 @@ const mineItems: ItemDef[] = [
   },
 ]
 
-export const ITEMS: ItemDef[] = [...cropItems, ...treasures, ...coffeeItems, ...pizzaItems, ...mineItems]
+// Items gifted in the Пекарня.
+const bakeryItems: ItemDef[] = [
+  {
+    id: 'cookies',
+    name: 'Печенье',
+    emoji: '🍪',
+    category: 'goods',
+    source: 'bakery',
+    rarity: 'rare',
+    desc: 'Тёплое домашнее печенье от благодарного гостя.',
+    diamondValue: 2,
+  },
+  {
+    id: 'donut',
+    name: 'Глазурный пончик',
+    emoji: '🍩',
+    category: 'goods',
+    source: 'bakery',
+    rarity: 'epic',
+    desc: 'Идеальная глазурь, тает во рту. Сладкоежки в восторге.',
+    diamondValue: 6,
+  },
+  {
+    id: 'celebration_cake',
+    name: 'Праздничный торт',
+    emoji: '🎂',
+    category: 'treasure',
+    source: 'bakery',
+    rarity: 'epic',
+    desc: 'Роскошный торт на заказ. Стоит хороших алмазов.',
+    diamondValue: 13,
+  },
+  {
+    id: 'master_baker',
+    name: 'Колпак мастера',
+    emoji: '👨‍🍳',
+    category: 'treasure',
+    source: 'bakery',
+    rarity: 'legendary',
+    desc: 'Знак великого пекаря, подарок VIP-гостя.',
+    diamondValue: 30,
+  },
+]
+
+export const ITEMS: ItemDef[] = [
+  ...cropItems,
+  ...treasures,
+  ...coffeeItems,
+  ...pizzaItems,
+  ...mineItems,
+  ...bakeryItems,
+]
 
 const ITEM_BY_ID = new Map(ITEMS.map((i) => [i.id, i]))
 
@@ -303,4 +354,23 @@ export function rollMineGem(dropChance: number): string | null {
     if (r <= 0) return t.id
   }
   return MINE_TABLE[0].id
+}
+
+// Bakery drop table.
+const BAKERY_TABLE: { id: string; weight: number }[] = [
+  { id: 'cookies', weight: 58 },
+  { id: 'donut', weight: 26 },
+  { id: 'celebration_cake', weight: 13 },
+  { id: 'master_baker', weight: 3 },
+]
+
+export function rollBakeryDrop(dropChance: number): string | null {
+  if (Math.random() > dropChance) return null
+  const total = BAKERY_TABLE.reduce((a, t) => a + t.weight, 0)
+  let r = Math.random() * total
+  for (const t of BAKERY_TABLE) {
+    r -= t.weight
+    if (r <= 0) return t.id
+  }
+  return BAKERY_TABLE[0].id
 }

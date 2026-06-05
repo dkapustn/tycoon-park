@@ -34,6 +34,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       localStorage.removeItem('tycoon-coffee-v1')
       localStorage.removeItem('tycoon-pizza-v1')
       localStorage.removeItem('tycoon-mine-v1')
+      localStorage.removeItem('tycoon-bakery-v1')
       location.reload()
     }
   }
