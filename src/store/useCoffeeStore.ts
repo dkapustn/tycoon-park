@@ -17,6 +17,7 @@ import {
   VIP_BONUS_MULT,
 } from '../games/coffee/drinks'
 import { rollCoffeeDrop } from '../items/items'
+import { globalIncomeMult, globalLuckBonus } from '../meta/progress'
 import { useGameStore } from './useGameStore'
 
 export type CustomerStatus = 'waiting' | 'brewing' | 'served' | 'left'
@@ -103,6 +104,7 @@ function computeEarn(drinkId: string, c: Customer, u: Record<string, number>, no
   const tip = drink.price * TIP_FRACTION * remaining * tipMult(u)
   let earn = drink.price + tip
   if (c.vip) earn *= VIP_BONUS_MULT
+  earn *= globalIncomeMult(useGameStore.getState().meta.boosts)
   return Math.round(earn)
 }
 
@@ -165,6 +167,11 @@ export const useCoffeeStore = create<CoffeeStore>()(
         let changed = false
 
         const customers = s.customers.map((c) => ({ ...c }))
+        const dropChance = itemDropChance(s.upgrades) + globalLuckBonus(gs.meta.boosts)
+        let earnedThisTick = 0
+        let servedThisTick = 0
+        let vipThisTick = 0
+        let giftsThisTick = 0
 
         // Resolve brews and expirations.
         for (const c of customers) {
@@ -172,8 +179,14 @@ export const useCoffeeStore = create<CoffeeStore>()(
             coins += c.earn
             totalEarned += c.earn
             served++
-            const gift = c.vip ? rollCoffeeDrop(1) : rollCoffeeDrop(itemDropChance(s.upgrades))
-            if (gift) gs.addItem(gift, 1)
+            earnedThisTick += c.earn
+            servedThisTick++
+            if (c.vip) vipThisTick++
+            const gift = c.vip ? rollCoffeeDrop(1) : rollCoffeeDrop(dropChance)
+            if (gift) {
+              gs.addItem(gift, 1)
+              giftsThisTick++
+            }
             c.status = 'served'
             c.giftItem = gift
             c.resolvedAt = now
@@ -245,6 +258,12 @@ export const useCoffeeStore = create<CoffeeStore>()(
         if (now >= nextSpawnAt && active() >= seats) nextSpawnAt = now + arrivalMs(s.upgrades)
 
         if (changed) set({ customers: next, coins, totalEarned, served, missed, nextSpawnAt, seq })
+
+        // Feed the cross-game meta counters.
+        if (servedThisTick) gs.bumpStat('served', servedThisTick)
+        if (vipThisTick) gs.bumpStat('vipServed', vipThisTick)
+        if (giftsThisTick) gs.bumpStat('giftsReceived', giftsThisTick)
+        if (earnedThisTick) gs.bumpStat('coinsEarned', earnedThisTick)
       },
 
       reset: () => set(initialData()),

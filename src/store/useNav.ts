@@ -5,12 +5,16 @@ export type Screen =
   | { name: 'game'; id: string }
   | { name: 'soon'; id: string }
   | { name: 'inventory' }
+  | { name: 'achievements' }
+  | { name: 'shop' }
 
 interface NavState {
   screen: Screen
   openGame: (id: string) => void
   openSoon: (id: string) => void
   openInventory: () => void
+  openAchievements: () => void
+  openShop: () => void
   goHome: () => void
 }
 
@@ -29,6 +33,14 @@ export const useNav = create<NavState>((set) => ({
   openInventory: () => {
     history.pushState({ nav: 'inventory' }, '')
     set({ screen: { name: 'inventory' } })
+  },
+  openAchievements: () => {
+    history.pushState({ nav: 'achievements' }, '')
+    set({ screen: { name: 'achievements' } })
+  },
+  openShop: () => {
+    history.pushState({ nav: 'shop' }, '')
+    set({ screen: { name: 'shop' } })
   },
   goHome: () => set({ screen: { name: 'hub' } }),
 }))

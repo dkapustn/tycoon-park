@@ -31,6 +31,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
     if (confirm('Сбросить весь прогресс? Это нельзя отменить.')) {
       localStorage.removeItem('tycoon-arcade-v1')
       localStorage.removeItem('tycoon-farm-v1')
+      localStorage.removeItem('tycoon-coffee-v1')
       location.reload()
     }
   }

@@ -29,6 +29,30 @@ PWA-аркада из тематических idle-clicker тайкунов. В
     InventoryScreen.tsx` (вкладки по категориям; «ценности» продаются за 💎).
     Навигация — `useNav` экран `inventory`. Версия persist поднята до 2 (миграция
     добавляет diamonds/inventory).
+- **Мета-прогресс (надстройка над всеми играми).** `meta` (persist v3) хранит
+  `stats` (кросс-игровые счётчики), `boosts` (вечные апгрейды), `claimed`
+  (достижения), `daily`, `rewardedLevel`. Чистые хелперы — `meta/progress.ts`.
+  - `stats` (тип `Stats`): `harvested/cropsSold/ordersFilled/treasuresFound/
+    coinsEarned/served/vipServed/giftsReceived/diamondsEarned`. Игры зовут
+    `useGameStore.getState().bumpStat(key, n)` на ДИСКРЕТНЫХ событиях (продажа,
+    сдача заказа, подача гостя) — НЕ в тиках по чуть-чуть.
+  - **Уровень магната**: `levelFromXp(stats.coinsEarned)` — кривая `70*1.45^L`.
+    `bumpStat('coinsEarned')` сам начисляет 💎 за новые уровни (`rewardedLevel`,
+    `levelReward`) и пушит тост.
+  - **Достижения**: `meta/achievements.ts` (`ACHIEVEMENTS`, метрики из `stats`
+    + `level`/`gamesCompleted`). Экран `components/meta/AchievementsScreen.tsx`,
+    `claimAchievement(id)` → 💎. Бейдж на хабе = число «забираемых».
+  - **Лавка магната** (`MAGNATE_BOOSTS`): вечные ГЛОБАЛЬНЫЕ бусты за 💎 —
+    `income` (×доход во всех играх), `luck` (+шанс находок/подарков), `gem`
+    (+цена ценностей). Селекторы `globalIncomeMult/globalLuckBonus/globalGemMult`
+    применяются в farm `sellAll/fulfillOrder/treasureChance` и coffee
+    `computeEarn/itemDropChance` и в `sellItemForDiamonds`. Экран
+    `MagnateShopScreen`, `buyBoost(id)`.
+  - **Ежедневка**: `claimDaily()` (стрик по датам) → 💎 + предмет. `DailyModal`.
+  - **Тосты**: `store/useToast.ts` + `components/ui/Toasts.tsx` (примонтирован в
+    `App`). Сторы могут пушить через `useToast.getState().push`.
+  - Навигация: экраны `achievements`/`shop` в `useNav`. Хаб — «домашняя база»
+    с уровнем, рядом действий (🎁🏆💠🎒) и сеткой игр.
 - Навигация: `store/useNav.ts` — state-based (`hub`/`game`/`soon`) + history,
   чтобы работала кнопка «назад». В шапке игры — своя кнопка ‹ (нужна для iOS).
 - Цикл: `games/engine/useIdleLoop.ts` — RAF-тик (коммит ~10/с) + капнутый

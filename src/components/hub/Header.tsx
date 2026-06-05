@@ -1,12 +1,10 @@
 import { useGameStore } from '../../store/useGameStore'
-import { useNav } from '../../store/useNav'
 import { formatNumber } from '../../lib/format'
 import { StatBadge } from '../ui/StatBadge'
 
 export function Header({ onSettings }: { onSettings: () => void }) {
   const stars = useGameStore((s) => s.meta.stars)
   const diamonds = useGameStore((s) => s.meta.diamonds)
-  const openInventory = useNav((s) => s.openInventory)
 
   return (
     <header className="pl-safe pr-safe pt-safe">
@@ -18,13 +16,6 @@ export function Header({ onSettings }: { onSettings: () => void }) {
         <div className="flex shrink-0 items-center gap-2">
           <StatBadge emoji="⭐" value={formatNumber(stars)} />
           <StatBadge emoji="💎" value={formatNumber(diamonds)} />
-          <button
-            onClick={openInventory}
-            aria-label="Инвентарь"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white/12 text-lg active:scale-95 tap-none"
-          >
-            🎒
-          </button>
           <button
             onClick={onSettings}
             aria-label="Настройки"

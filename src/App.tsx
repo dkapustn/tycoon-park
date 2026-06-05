@@ -12,6 +12,9 @@ import { FarmGame } from './components/game/farm/FarmGame'
 import { CoffeeGame } from './components/game/coffee/CoffeeGame'
 import { ComingSoon } from './components/game/ComingSoon'
 import { InventoryScreen } from './components/inventory/InventoryScreen'
+import { AchievementsScreen } from './components/meta/AchievementsScreen'
+import { MagnateShopScreen } from './components/meta/MagnateShopScreen'
+import { Toasts } from './components/ui/Toasts'
 
 function GameScreen({ id, onExit }: { id: string; onExit: () => void }) {
   const cfg = getConfig(id)
@@ -43,20 +46,25 @@ export default function App() {
   const key = 'id' in screen ? `${screen.name}:${screen.id}` : screen.name
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={key}
-        className="absolute inset-0"
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 1.02 }}
-        transition={{ duration: 0.22 }}
-      >
-        {screen.name === 'hub' && <Hub />}
-        {screen.name === 'game' && <GameScreen id={screen.id} onExit={back} />}
-        {screen.name === 'soon' && <ComingSoon cfg={getConfig(screen.id)} onExit={back} />}
-        {screen.name === 'inventory' && <InventoryScreen onBack={back} />}
-      </motion.div>
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={key}
+          className="absolute inset-0"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.02 }}
+          transition={{ duration: 0.22 }}
+        >
+          {screen.name === 'hub' && <Hub />}
+          {screen.name === 'game' && <GameScreen id={screen.id} onExit={back} />}
+          {screen.name === 'soon' && <ComingSoon cfg={getConfig(screen.id)} onExit={back} />}
+          {screen.name === 'inventory' && <InventoryScreen onBack={back} />}
+          {screen.name === 'achievements' && <AchievementsScreen onBack={back} />}
+          {screen.name === 'shop' && <MagnateShopScreen onBack={back} />}
+        </motion.div>
+      </AnimatePresence>
+      <Toasts />
+    </>
   )
 }

@@ -14,6 +14,7 @@ import {
   WATER_STEP,
 } from '../games/farm/crops'
 import { rollTreasure } from '../items/items'
+import { globalIncomeMult, globalLuckBonus } from '../meta/progress'
 import { useGameStore } from './useGameStore'
 
 export interface Plot {
@@ -183,30 +184,38 @@ export const useFarmStore = create<FarmStore>()(
         set({ plots })
         const gs = useGameStore.getState()
         gs.addItem(cropId, amount)
-        const treasure = rollTreasure(treasureChance(s.upgrades))
-        if (treasure) gs.addItem(treasure, 1)
+        gs.bumpStat('harvested', amount)
+        const treasure = rollTreasure(treasureChance(s.upgrades) + globalLuckBonus(gs.meta.boosts))
+        if (treasure) {
+          gs.addItem(treasure, 1)
+          gs.bumpStat('treasuresFound', 1)
+        }
         return { cropId, amount, treasure }
       },
 
       // Sells every farm crop currently in the shared inventory for coins.
       sellAll: () => {
         const s = get()
-        const inv = useGameStore.getState().inventory
-        const mult = sellMult(s.upgrades)
+        const gs = useGameStore.getState()
+        const inv = gs.inventory
+        const mult = sellMult(s.upgrades) * globalIncomeMult(gs.meta.boosts)
         let earned = 0
+        let sold = 0
         const taken: [string, number][] = []
         for (const c of CROPS) {
           const n = inv[c.id] ?? 0
           if (n > 0) {
             earned += c.sellValue * n * mult
+            sold += n
             taken.push([c.id, n])
           }
         }
         earned = Math.round(earned)
         if (earned <= 0) return 0
-        const gs = useGameStore.getState()
         for (const [id, n] of taken) gs.takeItem(id, n)
         set({ coins: s.coins + earned, totalEarned: s.totalEarned + earned })
+        gs.bumpStat('coinsEarned', earned)
+        gs.bumpStat('cropsSold', sold)
         return earned
       },
 
@@ -244,13 +253,16 @@ export const useFarmStore = create<FarmStore>()(
         if ((gs.inventory[order.cropId] ?? 0) < order.qty) return false
         gs.takeItem(order.cropId, order.qty)
         gs.addDiamonds(order.diamonds)
+        const payout = Math.round(order.coins * globalIncomeMult(gs.meta.boosts))
         const seq = s.orderSeq
         set({
-          coins: s.coins + order.coins,
-          totalEarned: s.totalEarned + order.coins,
-          orders: s.orders.map((o) => (o.id === id ? makeOrder(s.totalEarned + order.coins, seq) : o)),
+          coins: s.coins + payout,
+          totalEarned: s.totalEarned + payout,
+          orders: s.orders.map((o) => (o.id === id ? makeOrder(s.totalEarned + payout, seq) : o)),
           orderSeq: seq + 1,
         })
+        gs.bumpStat('coinsEarned', payout)
+        gs.bumpStat('ordersFilled', 1)
         return true
       },
 
@@ -271,20 +283,28 @@ export const useFarmStore = create<FarmStore>()(
         if ((s.upgrades.harvester ?? 0) > 0) {
           const now = Date.now()
           const goldenOwned = (s.upgrades.golden ?? 0) > 0
-          const chance = treasureChance(s.upgrades)
+          const chance = treasureChance(s.upgrades) + globalLuckBonus(gs.meta.boosts)
           let nextPlots: Plot[] | null = null
+          let harvested = 0
+          let treasures = 0
           for (let i = 0; i < s.plots.length; i++) {
             const p = s.plots[i]
             if (p.crop && isRipe(p, s.upgrades, now)) {
               const amount = goldenOwned && Math.random() < 0.25 ? 2 : 1
               gs.addItem(p.crop, amount)
+              harvested += amount
               const t = rollTreasure(chance)
-              if (t) gs.addItem(t, 1)
+              if (t) {
+                gs.addItem(t, 1)
+                treasures++
+              }
               if (!nextPlots) nextPlots = s.plots.slice()
               nextPlots[i] = emptyPlot()
             }
           }
           if (nextPlots) set({ plots: nextPlots })
+          if (harvested) gs.bumpStat('harvested', harvested)
+          if (treasures) gs.bumpStat('treasuresFound', treasures)
         }
 
         if ((s.upgrades.delivery ?? 0) > 0) {

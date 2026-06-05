@@ -3,73 +3,105 @@ import { motion } from 'framer-motion'
 import { GAMES, GAME_ORDER } from '../../games/registry'
 import { useGameStore } from '../../store/useGameStore'
 import { useNav } from '../../store/useNav'
-import { itemById } from '../../items/items'
+import { levelFromXp } from '../../meta/progress'
+import { ACHIEVEMENTS, metricValue } from '../../meta/achievements'
+import type { AchievementContext } from '../../meta/achievements'
 import { formatNumber } from '../../lib/format'
 import { Header } from './Header'
 import { GameCard } from './GameCard'
 import type { CardStatus } from './GameCard'
 import { ProgressBar } from '../ui/ProgressBar'
 import { SettingsSheet } from '../settings/SettingsSheet'
+import { DailyModal } from '../meta/DailyModal'
+import { cn } from '../../lib/cn'
+
+function todayStr(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 export function Hub() {
   const unlocked = useGameStore((s) => s.meta.unlocked)
   const completed = useGameStore((s) => s.meta.completed)
-  const diamonds = useGameStore((s) => s.meta.diamonds)
-  const stars = useGameStore((s) => s.meta.stars)
-  const inventory = useGameStore((s) => s.inventory)
+  const meta = useGameStore((s) => s.meta)
   const openGame = useNav((s) => s.openGame)
   const openSoon = useNav((s) => s.openSoon)
   const openInventory = useNav((s) => s.openInventory)
+  const openAchievements = useNav((s) => s.openAchievements)
+  const openShop = useNav((s) => s.openShop)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [dailyOpen, setDailyOpen] = useState(false)
 
-  const total = GAMES.length
-  const done = completed.length
-  const itemCount = Object.entries(inventory).reduce((a, [id, n]) => a + (itemById(id) ? n : 0), 0)
+  const lvl = levelFromXp(meta.stats.coinsEarned)
+  const dailyAvailable = meta.daily.lastClaim !== todayStr()
+
+  const ctx: AchievementContext = {
+    ...meta.stats,
+    level: lvl.level,
+    gamesCompleted: completed.length,
+  }
+  const claimable = ACHIEVEMENTS.filter(
+    (a) => !meta.claimed.includes(a.id) && metricValue(a.metric, ctx) >= a.goal,
+  ).length
+
+  const actions = [
+    { key: 'daily', emoji: '🎁', label: 'Награда', onClick: () => setDailyOpen(true), badge: dailyAvailable ? '!' : '' },
+    { key: 'ach', emoji: '🏆', label: 'Награды', onClick: openAchievements, badge: claimable > 0 ? String(claimable) : '' },
+    { key: 'shop', emoji: '💠', label: 'Лавка', onClick: openShop, badge: '' },
+    { key: 'inv', emoji: '🎒', label: 'Инвентарь', onClick: openInventory, badge: '' },
+  ]
 
   return (
     <div className="app-bg absolute inset-0 flex flex-col">
       <Header onSettings={() => setSettingsOpen(true)} />
       <div className="scroll-y flex-1 pl-safe pr-safe">
         <div className="mx-auto w-full max-w-3xl px-4 pb-10 sm:px-5">
-          {/* Progress hero */}
+          {/* Tycoon level hero */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-            className="mb-4 overflow-hidden rounded-4xl bg-gradient-to-br from-white/15 to-white/5 p-4 shadow-card"
+            className="mb-3 overflow-hidden rounded-4xl bg-gradient-to-br from-white/15 to-white/5 p-4 shadow-card"
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-display text-lg font-bold">🏆 Твой парк</div>
-                <div className="text-sm text-white/65">
-                  Пройдено {done} из {total} тайкунов
+            <div className="flex items-center gap-3">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl grad-accent text-2xl font-extrabold shadow-pop">
+                {lvl.level}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-display text-lg font-bold leading-tight">🏙️ Тайкун-магнат</div>
+                <div className="text-xs text-white/60">
+                  Уровень {lvl.level} · до след. {formatNumber(Math.ceil(lvl.span - lvl.into))} 🪙
+                </div>
+                <div className="mt-1.5">
+                  <ProgressBar value={lvl.progress} />
                 </div>
               </div>
-              <button
-                onClick={openInventory}
-                className="shrink-0 rounded-2xl bg-white/15 px-4 py-2.5 font-display text-sm font-semibold tap-none active:scale-95"
-              >
-                🎒 Инвентарь
-              </button>
-            </div>
-            <div className="mt-3">
-              <ProgressBar value={total ? done / total : 0} />
-            </div>
-            <div className="mt-3 flex gap-2">
-              {[
-                { emoji: '💎', label: 'Алмазы', value: diamonds },
-                { emoji: '⭐', label: 'Звёзды', value: stars },
-                { emoji: '📦', label: 'Предметы', value: itemCount },
-              ].map((s) => (
-                <div key={s.label} className="flex-1 rounded-2xl bg-black/25 px-2 py-2 text-center">
-                  <div className="font-display text-lg font-extrabold tabular-nums leading-none">
-                    {s.emoji} {formatNumber(s.value)}
-                  </div>
-                  <div className="mt-1 text-[11px] text-white/55">{s.label}</div>
-                </div>
-              ))}
             </div>
           </motion.div>
+
+          {/* Meta actions */}
+          <div className="mb-4 grid grid-cols-4 gap-2">
+            {actions.map((a) => (
+              <button
+                key={a.key}
+                onClick={a.onClick}
+                className="relative flex flex-col items-center gap-1 rounded-2xl bg-white/10 py-3 tap-none transition-all active:scale-95 hover:bg-white/15"
+              >
+                {a.badge && (
+                  <span
+                    className={cn(
+                      'absolute right-2 top-1.5 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] font-bold leading-none',
+                      a.badge === '!' ? 'animate-pulseGlow bg-rose-500' : 'bg-rose-500',
+                    )}
+                  >
+                    {a.badge}
+                  </span>
+                )}
+                <span className="text-2xl leading-none">{a.emoji}</span>
+                <span className="text-[11px] font-semibold text-white/80">{a.label}</span>
+              </button>
+            ))}
+          </div>
 
           <div className="mb-2 px-1 font-display text-sm font-semibold uppercase tracking-wide text-white/55">
             🎮 Игры
@@ -98,6 +130,7 @@ export function Hub() {
         </div>
       </div>
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <DailyModal open={dailyOpen} onClose={() => setDailyOpen(false)} />
     </div>
   )
 }
