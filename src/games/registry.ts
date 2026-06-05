@@ -1,7 +1,8 @@
 import type { GameConfig } from './types'
 import { farmConfig } from './configs/farm'
 import { coffeeConfig } from './configs/coffee'
-import { pizzaConfig, mineConfig, bakeryConfig } from './configs/teasers'
+import { pizzaConfig } from './configs/pizza'
+import { mineConfig, bakeryConfig } from './configs/teasers'
 
 /** Ordered list — index defines the unlock chain. */
 export const GAMES: GameConfig[] = [

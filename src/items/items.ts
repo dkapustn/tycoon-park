@@ -118,7 +118,51 @@ const coffeeItems: ItemDef[] = [
   },
 ]
 
-export const ITEMS: ItemDef[] = [...cropItems, ...treasures, ...coffeeItems]
+// Items produced by the Пиццерия.
+const pizzaItems: ItemDef[] = [
+  {
+    id: 'tomato_crate',
+    name: 'Ящик томатов',
+    emoji: '🍅',
+    category: 'goods',
+    source: 'pizza',
+    rarity: 'rare',
+    desc: 'Спелые томаты в подарок от довольного гостя.',
+    diamondValue: 2,
+  },
+  {
+    id: 'olive_oil',
+    name: 'Оливковое масло',
+    emoji: '🫒',
+    category: 'goods',
+    source: 'pizza',
+    rarity: 'epic',
+    desc: 'Первый отжим, экстра-класс. Гурманы ценят.',
+    diamondValue: 6,
+  },
+  {
+    id: 'golden_slice',
+    name: 'Золотой кусочек',
+    emoji: '🍕',
+    category: 'treasure',
+    source: 'pizza',
+    rarity: 'epic',
+    desc: 'Идеально испечённый ломтик. Хрустит золотом!',
+    diamondValue: 13,
+  },
+  {
+    id: 'pizzaiolo_medal',
+    name: 'Медаль пиццайоло',
+    emoji: '🏅',
+    category: 'treasure',
+    source: 'pizza',
+    rarity: 'legendary',
+    desc: 'Знак высшего мастерства от VIP-гостя.',
+    diamondValue: 30,
+  },
+]
+
+export const ITEMS: ItemDef[] = [...cropItems, ...treasures, ...coffeeItems, ...pizzaItems]
 
 const ITEM_BY_ID = new Map(ITEMS.map((i) => [i.id, i]))
 
@@ -177,4 +221,23 @@ export function rollCoffeeDrop(dropChance: number): string | null {
     if (r <= 0) return t.id
   }
   return COFFEE_TABLE[0].id
+}
+
+// Pizzeria drop table.
+const PIZZA_TABLE: { id: string; weight: number }[] = [
+  { id: 'tomato_crate', weight: 58 },
+  { id: 'olive_oil', weight: 26 },
+  { id: 'golden_slice', weight: 13 },
+  { id: 'pizzaiolo_medal', weight: 3 },
+]
+
+export function rollPizzaDrop(dropChance: number): string | null {
+  if (Math.random() > dropChance) return null
+  const total = PIZZA_TABLE.reduce((a, t) => a + t.weight, 0)
+  let r = Math.random() * total
+  for (const t of PIZZA_TABLE) {
+    r -= t.weight
+    if (r <= 0) return t.id
+  }
+  return PIZZA_TABLE[0].id
 }

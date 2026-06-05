@@ -12,6 +12,8 @@ export interface Stats {
   vipServed: number
   giftsReceived: number
   diamondsEarned: number
+  pizzasBaked: number
+  perfectBakes: number
 }
 
 export function emptyStats(): Stats {
@@ -25,6 +27,8 @@ export function emptyStats(): Stats {
     vipServed: 0,
     giftsReceived: 0,
     diamondsEarned: 0,
+    pizzasBaked: 0,
+    perfectBakes: 0,
   }
 }
 

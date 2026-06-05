@@ -38,6 +38,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'vip_2', name: 'Знаменитость', emoji: '💼', metric: 'vipServed', goal: 50, reward: 28 },
   { id: 'gift_1', name: 'Щедрые гости', emoji: '🎁', metric: 'giftsReceived', goal: 20, reward: 6 },
 
+  // Pizzeria
+  { id: 'bake_1', name: 'Подмастерье печи', emoji: '🍕', metric: 'pizzasBaked', goal: 50, reward: 3 },
+  { id: 'bake_2', name: 'Пиццайоло', emoji: '🔥', metric: 'pizzasBaked', goal: 500, reward: 8 },
+  { id: 'bake_3', name: 'Король пиццы', emoji: '👑', metric: 'pizzasBaked', goal: 5000, reward: 25 },
+  { id: 'perfect_1', name: 'Точно в срок', emoji: '🎯', metric: 'perfectBakes', goal: 25, reward: 8 },
+  { id: 'perfect_2', name: 'Мастер темпа', emoji: '⏱️', metric: 'perfectBakes', goal: 250, reward: 22 },
+
   // Wealth & meta
   { id: 'coins_1', name: 'Первая десятка', emoji: '🪙', metric: 'coinsEarned', goal: 10000, reward: 5 },
   { id: 'coins_2', name: 'Шестизначный', emoji: '💰', metric: 'coinsEarned', goal: 100000, reward: 15 },

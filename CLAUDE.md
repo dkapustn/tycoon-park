@@ -57,7 +57,7 @@ PWA-аркада из тематических idle-clicker тайкунов. В
   чтобы работала кнопка «назад». В шапке игры — своя кнопка ‹ (нужна для iOS).
 - Цикл: `games/engine/useIdleLoop.ts` — RAF-тик (коммит ~10/с) + капнутый
   офлайн-докоп (≤120с). Тап-цель ловит `pointerdown` (не `click`!).
-- **Мини-игры (не кликеры).** У `GameConfig` есть поле `kind?: 'idle'|'farm'|'coffee'`.
+- **Мини-игры (не кликеры).** У `GameConfig` есть поле `kind?: 'idle'|'farm'|'coffee'|'pizza'`.
   Роутинг — `GameScreen` в `App.tsx` (switch по `kind`); `idle` → старый
   `<IdleGame>`. Так в одну витрину уживаются разные движки; новую игру-мини
   делаем тем же приёмом — новый `kind` + свой компонент + свой стор.
@@ -103,6 +103,21 @@ PWA-аркада из тематических idle-clicker тайкунов. В
     шанс «товара» в ОБЩИЙ `inventory` (`rollCoffeeDrop`, продаётся за 💎), за
     прохождение — `diamondReward`. Цель ~10–12 мин (баланс прикинут отдельным
     sim-скриптом по очереди, НЕ в `scripts/sim.mjs`).
+- **Пиццерия** (`kind:'pizza'`) — мини-игра «поймай прожарку» (новая механика):
+  - Данные: `games/pizza/pizzas.ts` (`PIZZAS`, `PIZZA_UPGRADES` — печь/тесто/
+    столики/промо/декор/робот + премиум за 💎 шеф/бренд/рецепт; деривативы
+    `ovenCount/seatCount/bakeMs/arrivalMs/patienceMs/perfectFrom/bakeQuality/
+    comboMult`). Константы `PERFECT_BASE/BURNT_AT/AUTO_PULL_AT`.
+  - Состояние: ОТДЕЛЬНЫЙ стор `store/usePizzaStore.ts`, persist `tycoon-pizza-v1`
+    (живые заказы не персистятся). Заказы `orders[]` — статусы `waiting→baking→
+    served/left`. Dev-хук `window.__pizza`.
+  - Цикл: тап по заказу = поставить в печь (если свободна) → тап ВТОРОЙ раз в
+    зелёной зоне прогресса = «идеально» (полная цена + чаевые + растущее комбо);
+    рано = сыро (×0.6), поздно = передержал (×0.5), не достал до `BURNT_AT` =
+    сгорела (потеря, комбо сброс). `Робот-пиццайоло` достаёт сам в идеале.
+  - Луп: `games/pizza/usePizzaTick.ts` (~12/с — окно «идеально» узкое). Компоненты
+    `components/game/pizza/` (`PizzaGame`, `OrderCard` с баром прожарки и зоной,
+    `PizzaShopSheet`). Стат-ключи `pizzasBaked/perfectBakes`, дропы `rollPizzaDrop`.
 
 ## Превью (как «видеть» приложение)
 - Preview MCP читает `C:\cabbage\Projects\.claude\launch.json` (НЕ папку проекта).

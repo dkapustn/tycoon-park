@@ -26,21 +26,6 @@ function teaser(t: TeaserInput): GameConfig {
   }
 }
 
-export const pizzaConfig = teaser({
-  id: 'pizza',
-  title: 'Пиццерия',
-  emoji: '🍕',
-  tagline: 'Горячая, с пылу с жару',
-  cardGradient: ['#fb7185', '#b91c1c'],
-  theme: {
-    gradFrom: '#fb7185', gradTo: '#dc2626', accent: '#ef4444', accentSoft: '#fecaca',
-    surface: '#2b1414', bg0: '#241011', bg1: '#3a1518', bg2: '#7f1d1d',
-  },
-  currency: { name: 'монеты', emoji: '🪙' },
-  tapTarget: { emoji: '🍕', label: 'Испечь пиццу', baseTapValue: 1 },
-  starReward: 5,
-})
-
 export const mineConfig = teaser({
   id: 'mine',
   title: 'Шахта',
