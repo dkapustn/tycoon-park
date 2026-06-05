@@ -8,6 +8,7 @@ import { setHapticsEnabled } from './lib/haptics'
 import { setConfettiReduced } from './lib/confetti'
 import { Hub } from './components/hub/Hub'
 import { IdleGame } from './components/game/IdleGame'
+import { FarmGame } from './components/game/farm/FarmGame'
 import { ComingSoon } from './components/game/ComingSoon'
 
 export default function App() {
@@ -43,7 +44,12 @@ export default function App() {
         transition={{ duration: 0.22 }}
       >
         {screen.name === 'hub' && <Hub />}
-        {screen.name === 'game' && <IdleGame cfg={getConfig(screen.id)} onExit={back} />}
+        {screen.name === 'game' &&
+          (getConfig(screen.id).kind === 'farm' ? (
+            <FarmGame cfg={getConfig(screen.id)} onExit={back} />
+          ) : (
+            <IdleGame cfg={getConfig(screen.id)} onExit={back} />
+          ))}
         {screen.name === 'soon' && <ComingSoon cfg={getConfig(screen.id)} onExit={back} />}
       </motion.div>
     </AnimatePresence>

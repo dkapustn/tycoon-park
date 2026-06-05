@@ -38,8 +38,13 @@ export interface GameTheme {
   bg2: string
 }
 
+/** Which engine renders the game. `idle` = generic clicker; `farm` = the
+ *  plant/grow/harvest/sell mini-game. Defaults to `idle` when omitted. */
+export type GameKind = 'idle' | 'farm'
+
 export interface GameConfig {
   id: string
+  kind?: GameKind
   title: string
   emoji: string
   tagline: string

@@ -5,9 +5,10 @@ import type { GameConfig } from '../types'
 // and agro are "keep playing" content past the finish line.
 export const farmConfig: GameConfig = {
   id: 'farm',
+  kind: 'farm',
   title: 'Ферма',
   emoji: '🌱',
-  tagline: 'Посади, вырасти, разбогатей',
+  tagline: 'Сажай, поливай, собирай, продавай',
   cardGradient: ['#4ade80', '#15803d'],
   theme: {
     gradFrom: '#4ade80',
