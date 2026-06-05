@@ -9,8 +9,16 @@ import { setConfettiReduced } from './lib/confetti'
 import { Hub } from './components/hub/Hub'
 import { IdleGame } from './components/game/IdleGame'
 import { FarmGame } from './components/game/farm/FarmGame'
+import { CoffeeGame } from './components/game/coffee/CoffeeGame'
 import { ComingSoon } from './components/game/ComingSoon'
 import { InventoryScreen } from './components/inventory/InventoryScreen'
+
+function GameScreen({ id, onExit }: { id: string; onExit: () => void }) {
+  const cfg = getConfig(id)
+  if (cfg.kind === 'farm') return <FarmGame cfg={cfg} onExit={onExit} />
+  if (cfg.kind === 'coffee') return <CoffeeGame cfg={cfg} onExit={onExit} />
+  return <IdleGame cfg={cfg} onExit={onExit} />
+}
 
 export default function App() {
   const screen = useNav((s) => s.screen)
@@ -45,12 +53,7 @@ export default function App() {
         transition={{ duration: 0.22 }}
       >
         {screen.name === 'hub' && <Hub />}
-        {screen.name === 'game' &&
-          (getConfig(screen.id).kind === 'farm' ? (
-            <FarmGame cfg={getConfig(screen.id)} onExit={back} />
-          ) : (
-            <IdleGame cfg={getConfig(screen.id)} onExit={back} />
-          ))}
+        {screen.name === 'game' && <GameScreen id={screen.id} onExit={back} />}
         {screen.name === 'soon' && <ComingSoon cfg={getConfig(screen.id)} onExit={back} />}
         {screen.name === 'inventory' && <InventoryScreen onBack={back} />}
       </motion.div>

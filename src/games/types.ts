@@ -39,8 +39,9 @@ export interface GameTheme {
 }
 
 /** Which engine renders the game. `idle` = generic clicker; `farm` = the
- *  plant/grow/harvest/sell mini-game. Defaults to `idle` when omitted. */
-export type GameKind = 'idle' | 'farm'
+ *  plant/grow/harvest/sell mini-game; `coffee` = the serve-the-queue café
+ *  mini-game. Defaults to `idle` when omitted. */
+export type GameKind = 'idle' | 'farm' | 'coffee'
 
 export interface GameConfig {
   id: string

@@ -73,7 +73,52 @@ const treasures: ItemDef[] = [
   },
 ]
 
-export const ITEMS: ItemDef[] = [...cropItems, ...treasures]
+// Items produced by the Coffee shop (Кофейня) — fills the "Товары" tab and the
+// "Ценности" tab, all sellable for 💎.
+const coffeeItems: ItemDef[] = [
+  {
+    id: 'coffee_beans',
+    name: 'Мешок зёрен',
+    emoji: '🫘',
+    category: 'goods',
+    source: 'coffee',
+    rarity: 'rare',
+    desc: 'Отборные обжаренные зёрна от благодарных гостей.',
+    diamondValue: 2,
+  },
+  {
+    id: 'croissant',
+    name: 'Золотой круассан',
+    emoji: '🥐',
+    category: 'goods',
+    source: 'coffee',
+    rarity: 'epic',
+    desc: 'Идеально слоёный. Гурманы платят за него алмазами.',
+    diamondValue: 6,
+  },
+  {
+    id: 'golden_cup',
+    name: 'Золотая чашка',
+    emoji: '🏆',
+    category: 'treasure',
+    source: 'coffee',
+    rarity: 'epic',
+    desc: 'Награда лучшему бариста. Чистое золото!',
+    diamondValue: 12,
+  },
+  {
+    id: 'barista_badge',
+    name: 'Знак мастера',
+    emoji: '🎖️',
+    category: 'treasure',
+    source: 'coffee',
+    rarity: 'legendary',
+    desc: 'Подарок от VIP-гостя. Большая редкость.',
+    diamondValue: 30,
+  },
+]
+
+export const ITEMS: ItemDef[] = [...cropItems, ...treasures, ...coffeeItems]
 
 const ITEM_BY_ID = new Map(ITEMS.map((i) => [i.id, i]))
 
@@ -113,4 +158,23 @@ export function rollTreasure(dropChance: number): string | null {
     if (r <= 0) return t.id
   }
   return TREASURE_TABLE[0].id
+}
+
+// Coffee-shop drop table (used when serving a happy or VIP customer).
+const COFFEE_TABLE: { id: string; weight: number }[] = [
+  { id: 'coffee_beans', weight: 58 },
+  { id: 'croissant', weight: 26 },
+  { id: 'golden_cup', weight: 13 },
+  { id: 'barista_badge', weight: 3 },
+]
+
+export function rollCoffeeDrop(dropChance: number): string | null {
+  if (Math.random() > dropChance) return null
+  const total = COFFEE_TABLE.reduce((a, t) => a + t.weight, 0)
+  let r = Math.random() * total
+  for (const t of COFFEE_TABLE) {
+    r -= t.weight
+    if (r <= 0) return t.id
+  }
+  return COFFEE_TABLE[0].id
 }

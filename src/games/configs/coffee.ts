@@ -4,9 +4,10 @@ import type { GameConfig } from '../types'
 // engaged player ~8-9 min.
 export const coffeeConfig: GameConfig = {
   id: 'coffee',
+  kind: 'coffee',
   title: 'Кофейня',
   emoji: '☕',
-  tagline: 'Вари, подавай, расширяйся',
+  tagline: 'Вари, подавай, не дай очереди уйти',
   cardGradient: ['#e3b98f', '#7c4a26'],
   theme: {
     gradFrom: '#e3b98f',
@@ -35,7 +36,7 @@ export const coffeeConfig: GameConfig = {
     { id: 'wifi', name: 'Wi-Fi и розетки', emoji: '📶', cost: 18000, effect: { type: 'rateMult', value: 2 }, desc: 'Весь доход ×2' },
     { id: 'brand', name: 'Известный бренд', emoji: '⭐', cost: 70000, effect: { type: 'rateMult', value: 3 }, desc: 'Весь доход ×3' },
   ],
-  goal: { type: 'totalEarned', amount: 95000, label: 'Открой кофейную империю' },
+  goal: { type: 'totalEarned', amount: 65000, label: 'Стань кофейной империей' },
   win: {
     title: 'Кофейная империя! ☕👑',
     text: 'Очередь с самого утра, бариста не успевают, а твои франшизы открываются по всему городу!',
