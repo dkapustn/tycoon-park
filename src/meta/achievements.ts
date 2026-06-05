@@ -45,6 +45,11 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'perfect_1', name: 'Точно в срок', emoji: '🎯', metric: 'perfectBakes', goal: 25, reward: 8 },
   { id: 'perfect_2', name: 'Мастер темпа', emoji: '⏱️', metric: 'perfectBakes', goal: 250, reward: 22 },
 
+  // Mine
+  { id: 'mine_1', name: 'Старатель', emoji: '⛏️', metric: 'oresMined', goal: 50, reward: 3 },
+  { id: 'mine_2', name: 'Горняк', emoji: '⚙️', metric: 'oresMined', goal: 500, reward: 8 },
+  { id: 'mine_3', name: 'Хозяин недр', emoji: '💎', metric: 'oresMined', goal: 5000, reward: 25 },
+
   // Wealth & meta
   { id: 'coins_1', name: 'Первая десятка', emoji: '🪙', metric: 'coinsEarned', goal: 10000, reward: 5 },
   { id: 'coins_2', name: 'Шестизначный', emoji: '💰', metric: 'coinsEarned', goal: 100000, reward: 15 },

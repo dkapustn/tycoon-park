@@ -26,21 +26,6 @@ function teaser(t: TeaserInput): GameConfig {
   }
 }
 
-export const mineConfig = teaser({
-  id: 'mine',
-  title: 'Шахта',
-  emoji: '⛏️',
-  tagline: 'Копай глубже за самоцветами',
-  cardGradient: ['#38bdf8', '#1e3a8a'],
-  theme: {
-    gradFrom: '#38bdf8', gradTo: '#2563eb', accent: '#3b82f6', accentSoft: '#bae6fd',
-    surface: '#0f1d33', bg0: '#0c1626', bg1: '#11233f', bg2: '#1e3a8a',
-  },
-  currency: { name: 'самоцветы', emoji: '💎' },
-  tapTarget: { emoji: '⛏️', label: 'Копать', baseTapValue: 1 },
-  starReward: 5,
-})
-
 export const bakeryConfig = teaser({
   id: 'bakery',
   title: 'Пекарня',

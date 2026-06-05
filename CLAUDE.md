@@ -57,7 +57,7 @@ PWA-аркада из тематических idle-clicker тайкунов. В
   чтобы работала кнопка «назад». В шапке игры — своя кнопка ‹ (нужна для iOS).
 - Цикл: `games/engine/useIdleLoop.ts` — RAF-тик (коммит ~10/с) + капнутый
   офлайн-докоп (≤120с). Тап-цель ловит `pointerdown` (не `click`!).
-- **Мини-игры (не кликеры).** У `GameConfig` есть поле `kind?: 'idle'|'farm'|'coffee'|'pizza'`.
+- **Мини-игры (не кликеры).** У `GameConfig` есть поле `kind?: 'idle'|'farm'|'coffee'|'pizza'|'mine'`.
   Роутинг — `GameScreen` в `App.tsx` (switch по `kind`); `idle` → старый
   `<IdleGame>`. Так в одну витрину уживаются разные движки; новую игру-мини
   делаем тем же приёмом — новый `kind` + свой компонент + свой стор.
@@ -118,6 +118,21 @@ PWA-аркада из тематических idle-clicker тайкунов. В
   - Луп: `games/pizza/usePizzaTick.ts` (~12/с — окно «идеально» узкое). Компоненты
     `components/game/pizza/` (`PizzaGame`, `OrderCard` с баром прожарки и зоной,
     `PizzaShopSheet`). Стат-ключи `pizzasBaked/perfectBakes`, дропы `rollPizzaDrop`.
+- **Шахта** (`kind:'mine'`) — мини-игра + ПЕРВЫЙ idle-движок парка (оффлайн-доход):
+  - Данные: `games/mine/ores.ts` (`ORES` — слои с value/veinHp/depthFrom,
+    `MINE_UPGRADES` — кирка/шахтёры/бур/вагонетка + премиум 💎 экзоскелет/турбо/
+    детектор; `tapDamage/autoDps/valueMult/gemChance`, `OFFLINE_CAP_MS=8ч`).
+  - Состояние: ОТДЕЛЬНЫЙ стор `store/useMineStore.ts`, persist `tycoon-mine-v1`
+    (хранит depth/veinHp/upgrades/lastSeen). `applyDamage()` ломает жилы (урон ≥
+    hp) → монеты + углубление + шанс самоцвета (`rollMineGem` → инвентарь → 💎).
+    Тап = `mineTap`, авто-шахтёры = `tick(dt)`. **Оффлайн**: `collectOffline()`
+    на входе считает добычу авто-шахтёров за время отсутствия (аппрокс. на текущем
+    слое, кап 8ч) → модалка `WelcomeBackModal`. `markSeen` держит lastSeen свежим.
+    Dev-хук `window.__mine`.
+  - Луп: `games/mine/useMineTick.ts` (~10/с: авто-урон + markSeen). Компоненты
+    `components/game/mine/` (`MineGame`, `RockFace` — тап-цель с HP-баром жилы,
+    `MineShopSheet`, `WelcomeBackModal`). Стат-ключ `oresMined`, самоцветы бьют
+    `treasuresFound`. Цель 90k (~10 мин активной игры, диамант — пост-гейм).
 
 ## Превью (как «видеть» приложение)
 - Preview MCP читает `C:\cabbage\Projects\.claude\launch.json` (НЕ папку проекта).

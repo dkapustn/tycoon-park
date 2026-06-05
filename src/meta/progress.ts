@@ -14,6 +14,7 @@ export interface Stats {
   diamondsEarned: number
   pizzasBaked: number
   perfectBakes: number
+  oresMined: number
 }
 
 export function emptyStats(): Stats {
@@ -29,6 +30,7 @@ export function emptyStats(): Stats {
     diamondsEarned: 0,
     pizzasBaked: 0,
     perfectBakes: 0,
+    oresMined: 0,
   }
 }
 

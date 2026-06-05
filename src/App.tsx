@@ -11,6 +11,7 @@ import { IdleGame } from './components/game/IdleGame'
 import { FarmGame } from './components/game/farm/FarmGame'
 import { CoffeeGame } from './components/game/coffee/CoffeeGame'
 import { PizzaGame } from './components/game/pizza/PizzaGame'
+import { MineGame } from './components/game/mine/MineGame'
 import { ComingSoon } from './components/game/ComingSoon'
 import { InventoryScreen } from './components/inventory/InventoryScreen'
 import { AchievementsScreen } from './components/meta/AchievementsScreen'
@@ -22,6 +23,7 @@ function GameScreen({ id, onExit }: { id: string; onExit: () => void }) {
   if (cfg.kind === 'farm') return <FarmGame cfg={cfg} onExit={onExit} />
   if (cfg.kind === 'coffee') return <CoffeeGame cfg={cfg} onExit={onExit} />
   if (cfg.kind === 'pizza') return <PizzaGame cfg={cfg} onExit={onExit} />
+  if (cfg.kind === 'mine') return <MineGame cfg={cfg} onExit={onExit} />
   return <IdleGame cfg={cfg} onExit={onExit} />
 }
 

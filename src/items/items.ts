@@ -162,7 +162,51 @@ const pizzaItems: ItemDef[] = [
   },
 ]
 
-export const ITEMS: ItemDef[] = [...cropItems, ...treasures, ...coffeeItems, ...pizzaItems]
+// Gems dug up in the Шахта.
+const mineItems: ItemDef[] = [
+  {
+    id: 'amethyst',
+    name: 'Аметист',
+    emoji: '🟣',
+    category: 'treasure',
+    source: 'mine',
+    rarity: 'rare',
+    desc: 'Фиолетовый кристалл, выбитый из породы.',
+    diamondValue: 3,
+  },
+  {
+    id: 'topaz',
+    name: 'Топаз',
+    emoji: '🔶',
+    category: 'treasure',
+    source: 'mine',
+    rarity: 'epic',
+    desc: 'Тёплый золотистый самоцвет.',
+    diamondValue: 7,
+  },
+  {
+    id: 'sapphire',
+    name: 'Сапфир',
+    emoji: '🔷',
+    category: 'treasure',
+    source: 'mine',
+    rarity: 'epic',
+    desc: 'Глубокий синий камень редкой чистоты.',
+    diamondValue: 11,
+  },
+  {
+    id: 'mine_diamond',
+    name: 'Чистый алмаз',
+    emoji: '💎',
+    category: 'treasure',
+    source: 'mine',
+    rarity: 'legendary',
+    desc: 'Безупречный алмаз с самой глубины шахты.',
+    diamondValue: 28,
+  },
+]
+
+export const ITEMS: ItemDef[] = [...cropItems, ...treasures, ...coffeeItems, ...pizzaItems, ...mineItems]
 
 const ITEM_BY_ID = new Map(ITEMS.map((i) => [i.id, i]))
 
@@ -240,4 +284,23 @@ export function rollPizzaDrop(dropChance: number): string | null {
     if (r <= 0) return t.id
   }
   return PIZZA_TABLE[0].id
+}
+
+// Mine gem table.
+const MINE_TABLE: { id: string; weight: number }[] = [
+  { id: 'amethyst', weight: 56 },
+  { id: 'topaz', weight: 28 },
+  { id: 'sapphire', weight: 12 },
+  { id: 'mine_diamond', weight: 4 },
+]
+
+export function rollMineGem(dropChance: number): string | null {
+  if (Math.random() > dropChance) return null
+  const total = MINE_TABLE.reduce((a, t) => a + t.weight, 0)
+  let r = Math.random() * total
+  for (const t of MINE_TABLE) {
+    r -= t.weight
+    if (r <= 0) return t.id
+  }
+  return MINE_TABLE[0].id
 }
