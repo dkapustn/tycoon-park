@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import type { PointerEvent } from 'react'
 import type { Plot as PlotData } from '../../../store/useFarmStore'
 import { plotProgress } from '../../../store/useFarmStore'
 import { cropById } from '../../../games/farm/crops'
@@ -8,7 +9,7 @@ interface Props {
   plot: PlotData
   upgrades: Record<string, number>
   now: number
-  onTap: () => void
+  onTap: (e: PointerEvent<HTMLButtonElement>) => void
 }
 
 /** A single soil tile: bare → seedling → sprout → ripe (tap to harvest). */

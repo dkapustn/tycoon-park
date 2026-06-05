@@ -16,9 +16,19 @@ PWA-аркада из тематических idle-clicker тайкунов. В
   `games/configs/` + запись в массив `GAMES` (`games/registry.ts`); **порядок в
   массиве = цепочка разблокировки**. `implemented:false` → экран «Скоро».
 - Состояние: `store/useGameStore.ts` — один persist-ключ `tycoon-arcade-v1`
-  (`meta{unlocked,completed,stars,settings}` + `games[id]{coins,totalEarned,
-  buildings,upgrades,lastSeen}`). Производные (стоимость/доход/тап/прогресс) —
-  в `games/engine/selectors.ts`, не хранятся.
+  (`meta{unlocked,completed,stars,diamonds,settings}` + `games[id]{...}` +
+  `inventory{itemId:qty}`). Производные — в `games/engine/selectors.ts`.
+- **Общая экономика (между всеми играми).** В `useGameStore`:
+  - `meta.diamonds` — общая премиум-валюта 💎. Начисляется за прохождение
+    (`cfg.diamondReward`) и за продажу «ценностей» из инвентаря. Тратится на
+    премиум-улучшения (напр. на ферме `currency:'diamonds'`). Видна в шапке
+    хаба, игр (`GameShell`) и инвентаря.
+  - `inventory` — ОБЩИЙ инвентарь, куда все игры складывают предметы. Реестр
+    предметов: `items/items.ts` (`ItemDef{category,source,rarity,diamondValue}`,
+    `CATEGORY_TABS` = вкладки, `rollTreasure`). Экран: `components/inventory/
+    InventoryScreen.tsx` (вкладки по категориям; «ценности» продаются за 💎).
+    Навигация — `useNav` экран `inventory`. Версия persist поднята до 2 (миграция
+    добавляет diamonds/inventory).
 - Навигация: `store/useNav.ts` — state-based (`hub`/`game`/`soon`) + history,
   чтобы работала кнопка «назад». В шапке игры — своя кнопка ‹ (нужна для iOS).
 - Цикл: `games/engine/useIdleLoop.ts` — RAF-тик (коммит ~10/с) + капнутый
@@ -39,9 +49,14 @@ PWA-аркада из тематических idle-clicker тайкунов. В
     `Комбайн`/автопродажа `Грузовик`). Компоненты: `components/game/farm/`
     (`FarmGame` оркестрирует, `Plot`, `SeedBar`, `FarmShopSheet`).
   - Цикл игры: выбрать семя → тап по пустой грядке = посадить (списывает монеты)
-    → тап по растущей = полить (быстрее, до лимита) → тап по спелой = собрать в
-    амбар → кнопка «Продать» = монеты. Победа по `cfg.goal.amount` (totalEarned),
-    дальше — общий `useGameStore.completeGame` + `CompletionModal`.
+    → тап по растущей = полить (быстрее, до лимита) → тап по спелой = собрать
+    (урожай идёт в ОБЩИЙ `inventory`, шанс выкопать «ценность» → 💎) → кнопка
+    «Продать» = монеты за весь урожай из инвентаря. Победа по `cfg.goal.amount`.
+  - Связь с общей экономикой: сбор кладёт предметы в `useGameStore.inventory`
+    (farm store зовёт его через `getState()`), редкие находки (`rollTreasure`)
+    продаются за 💎 в инвентаре. **Заказы** (`orders` в farm store,
+    `FarmOrdersSheet`) — сдать N урожая → монеты + 💎. Премиум-улучшения
+    (`rainbow`/`lucky`) покупаются за 💎. `barn` удалён (был в v1, миграция чистит).
   - Баланс мини-фермы НЕ в `scripts/sim.mjs` (там idle-модель). Прикидка пейсинга
     — отдельным скриптом по модели «посадил-полил-собрал-продал», цель ~8–10 мин.
 

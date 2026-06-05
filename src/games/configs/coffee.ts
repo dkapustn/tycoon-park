@@ -41,5 +41,6 @@ export const coffeeConfig: GameConfig = {
     text: 'Очередь с самого утра, бариста не успевают, а твои франшизы открываются по всему городу!',
   },
   starReward: 4,
+  diamondReward: 20,
   implemented: true,
 }

@@ -1,5 +1,6 @@
 import { CROPS } from '../../../games/farm/crops'
 import { useFarmStore } from '../../../store/useFarmStore'
+import { useGameStore } from '../../../store/useGameStore'
 import { formatNumber } from '../../../lib/format'
 import { sfx } from '../../../lib/sound'
 import { haptic } from '../../../lib/haptics'
@@ -11,6 +12,7 @@ export function SeedBar() {
   const totalEarned = useFarmStore((s) => s.totalEarned)
   const selected = useFarmStore((s) => s.selectedSeed)
   const selectSeed = useFarmStore((s) => s.selectSeed)
+  const inventory = useGameStore((s) => s.inventory)
 
   return (
     <div className="scroll-y flex gap-2 overflow-x-auto pb-1">
@@ -18,6 +20,7 @@ export function SeedBar() {
         const locked = totalEarned < c.unlockAt
         const active = selected === c.id
         const affordable = coins >= c.seedCost
+        const have = inventory[c.id] ?? 0
         return (
           <button
             key={c.id}
@@ -33,6 +36,11 @@ export function SeedBar() {
               locked && 'opacity-45',
             )}
           >
+            {!locked && have > 0 && (
+              <span className="absolute -right-1 -top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-bold tabular-nums">
+                {formatNumber(have)}
+              </span>
+            )}
             <span className="text-2xl leading-none">{locked ? '🔒' : c.emoji}</span>
             <span className="truncate text-[11px] font-semibold leading-tight">{c.name}</span>
             {locked ? (

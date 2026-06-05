@@ -10,6 +10,7 @@ import { Hub } from './components/hub/Hub'
 import { IdleGame } from './components/game/IdleGame'
 import { FarmGame } from './components/game/farm/FarmGame'
 import { ComingSoon } from './components/game/ComingSoon'
+import { InventoryScreen } from './components/inventory/InventoryScreen'
 
 export default function App() {
   const screen = useNav((s) => s.screen)
@@ -31,7 +32,7 @@ export default function App() {
   }, [])
 
   const back = () => history.back()
-  const key = screen.name === 'hub' ? 'hub' : `${screen.name}:${screen.id}`
+  const key = 'id' in screen ? `${screen.name}:${screen.id}` : screen.name
 
   return (
     <AnimatePresence mode="wait">
@@ -51,6 +52,7 @@ export default function App() {
             <IdleGame cfg={getConfig(screen.id)} onExit={back} />
           ))}
         {screen.name === 'soon' && <ComingSoon cfg={getConfig(screen.id)} onExit={back} />}
+        {screen.name === 'inventory' && <InventoryScreen onBack={back} />}
       </motion.div>
     </AnimatePresence>
   )

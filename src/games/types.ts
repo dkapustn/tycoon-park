@@ -57,6 +57,8 @@ export interface GameConfig {
   goal: GoalDef
   win: { title: string; text: string }
   starReward: number
+  /** 💎 diamonds awarded the first time the game is completed. */
+  diamondReward?: number
   implemented: boolean
 }
 

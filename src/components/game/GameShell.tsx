@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function GameShell({ cfg, onBack, children }: Props) {
-  const stars = useGameStore((s) => s.meta.stars)
+  const diamonds = useGameStore((s) => s.meta.diamonds)
   return (
     <div className="app-bg absolute inset-0 flex flex-col" style={themeVars(cfg.theme)}>
       <header className="pl-safe pr-safe pt-safe">
@@ -27,7 +27,7 @@ export function GameShell({ cfg, onBack, children }: Props) {
           <div className="flex-1 truncate text-center font-display text-lg font-bold">
             {cfg.emoji} {cfg.title}
           </div>
-          <StatBadge emoji="⭐" value={formatNumber(stars)} />
+          <StatBadge emoji="💎" value={formatNumber(diamonds)} />
         </div>
       </header>
       <main className="relative flex min-h-0 flex-1 flex-col">{children}</main>

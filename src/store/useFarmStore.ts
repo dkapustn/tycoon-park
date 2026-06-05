@@ -1,16 +1,20 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
+  CROPS,
   cropById,
   plotPrice,
   growthMult,
   sellMult,
+  treasureChance,
   upgradeById,
   START_PLOTS,
   MAX_PLOTS,
   WATER_CAP,
   WATER_STEP,
 } from '../games/farm/crops'
+import { rollTreasure } from '../items/items'
+import { useGameStore } from './useGameStore'
 
 export interface Plot {
   /** Planted crop id, or null when the plot is bare soil. */
@@ -21,15 +25,30 @@ export interface Plot {
   boostMs: number
 }
 
+export interface FarmOrder {
+  id: number
+  cropId: string
+  qty: number
+  coins: number
+  diamonds: number
+}
+
+export interface HarvestResult {
+  cropId: string | null
+  amount: number
+  /** Item id of a treasure dug up, if any. */
+  treasure: string | null
+}
+
 export interface FarmData {
   coins: number
   totalEarned: number
-  /** Harvested crops waiting to be sold: cropId -> count. */
-  barn: Record<string, number>
   plots: Plot[]
   /** upgradeId -> level. */
   upgrades: Record<string, number>
   selectedSeed: string
+  orders: FarmOrder[]
+  orderSeq: number
   lastSeen: number
 }
 
@@ -38,16 +57,32 @@ interface FarmStore extends FarmData {
   selectSeed: (id: string) => void
   plant: (index: number) => boolean
   water: (index: number) => boolean
-  harvest: (index: number) => number
+  harvest: (index: number) => HarvestResult
   sellAll: () => number
   buyPlot: () => boolean
   buyUpgrade: (id: string) => boolean
+  fulfillOrder: (id: number) => boolean
+  rerollOrder: (id: number) => void
   runAuto: () => void
   reset: () => void
 }
 
+const ORDER_SLOTS = 3
+
 function emptyPlot(): Plot {
   return { crop: null, plantedAt: 0, boostMs: 0 }
+}
+
+/** Builds one contract from the crops unlocked at the given lifetime earnings. */
+function makeOrder(totalEarned: number, seq: number): FarmOrder {
+  const pool = CROPS.filter((c) => totalEarned >= c.unlockAt)
+  const list = pool.length > 0 ? pool : [CROPS[0]]
+  const crop = list[Math.floor(Math.random() * list.length)]
+  const tier = CROPS.indexOf(crop)
+  const qty = 3 + Math.floor(Math.random() * 6) // 3..8
+  const coins = Math.round(crop.sellValue * qty * 1.7)
+  const diamonds = 1 + Math.floor(tier / 2)
+  return { id: seq, cropId: crop.id, qty, coins, diamonds }
 }
 
 function initialData(): FarmData {
@@ -55,10 +90,11 @@ function initialData(): FarmData {
     // A little seed money so the very first crops can go in the ground.
     coins: 60,
     totalEarned: 0,
-    barn: {},
     plots: Array.from({ length: START_PLOTS }, emptyPlot),
     upgrades: {},
     selectedSeed: 'carrot',
+    orders: [],
+    orderSeq: 0,
     lastSeen: Date.now(),
   }
 }
@@ -82,33 +118,23 @@ export function isRipe(plot: Plot, upgrades: Record<string, number>, now: number
   return plot.crop != null && plotProgress(plot, upgrades, now) >= 1
 }
 
-/** Total market value of everything currently sitting in the barn. */
-export function barnValue(barn: Record<string, number>, upgrades: Record<string, number>): number {
-  const mult = sellMult(upgrades)
-  let sum = 0
-  for (const [id, n] of Object.entries(barn)) {
-    const c = cropById(id)
-    if (c) sum += c.sellValue * n * mult
-  }
-  return Math.round(sum)
-}
-
-export function barnCount(barn: Record<string, number>): number {
-  let n = 0
-  for (const v of Object.values(barn)) n += v
-  return n
-}
-
 export const useFarmStore = create<FarmStore>()(
   persist(
     (set, get) => ({
       ...initialData(),
 
       init: () => {
-        // Self-heal: ensure at least the starter plots exist (e.g. fresh save).
-        if (get().plots.length === 0) {
-          set({ plots: Array.from({ length: START_PLOTS }, emptyPlot) })
+        const s = get()
+        const patch: Partial<FarmData> = {}
+        if (s.plots.length === 0) patch.plots = Array.from({ length: START_PLOTS }, emptyPlot)
+        if (s.orders.length < ORDER_SLOTS) {
+          const orders = s.orders.slice()
+          let seq = s.orderSeq
+          while (orders.length < ORDER_SLOTS) orders.push(makeOrder(s.totalEarned, seq++))
+          patch.orders = orders
+          patch.orderSeq = seq
         }
+        if (Object.keys(patch).length) set(patch)
       },
 
       selectSeed: (id) => set({ selectedSeed: id }),
@@ -147,29 +173,40 @@ export const useFarmStore = create<FarmStore>()(
       harvest: (index) => {
         const s = get()
         const plot = s.plots[index]
-        if (!plot || !plot.crop) return 0
-        if (!isRipe(plot, s.upgrades, Date.now())) return 0
+        if (!plot || !plot.crop) return { cropId: null, amount: 0, treasure: null }
+        if (!isRipe(plot, s.upgrades, Date.now())) return { cropId: null, amount: 0, treasure: null }
         const cropId = plot.crop
         const golden = (s.upgrades.golden ?? 0) > 0 && Math.random() < 0.25
         const amount = golden ? 2 : 1
         const plots = s.plots.slice()
         plots[index] = emptyPlot()
-        set({
-          plots,
-          barn: { ...s.barn, [cropId]: (s.barn[cropId] ?? 0) + amount },
-        })
-        return amount
+        set({ plots })
+        const gs = useGameStore.getState()
+        gs.addItem(cropId, amount)
+        const treasure = rollTreasure(treasureChance(s.upgrades))
+        if (treasure) gs.addItem(treasure, 1)
+        return { cropId, amount, treasure }
       },
 
+      // Sells every farm crop currently in the shared inventory for coins.
       sellAll: () => {
         const s = get()
-        const earned = barnValue(s.barn, s.upgrades)
+        const inv = useGameStore.getState().inventory
+        const mult = sellMult(s.upgrades)
+        let earned = 0
+        const taken: [string, number][] = []
+        for (const c of CROPS) {
+          const n = inv[c.id] ?? 0
+          if (n > 0) {
+            earned += c.sellValue * n * mult
+            taken.push([c.id, n])
+          }
+        }
+        earned = Math.round(earned)
         if (earned <= 0) return 0
-        set({
-          barn: {},
-          coins: s.coins + earned,
-          totalEarned: s.totalEarned + earned,
-        })
+        const gs = useGameStore.getState()
+        for (const [id, n] of taken) gs.takeItem(id, n)
+        set({ coins: s.coins + earned, totalEarned: s.totalEarned + earned })
         return earned
       },
 
@@ -189,57 +226,87 @@ export const useFarmStore = create<FarmStore>()(
         const level = s.upgrades[id] ?? 0
         if (level >= def.maxLevel) return false
         const cost = Math.ceil(def.baseCost * Math.pow(def.costGrowth, level))
-        if (s.coins < cost) return false
-        set({ coins: s.coins - cost, upgrades: { ...s.upgrades, [id]: level + 1 } })
+        if (def.currency === 'diamonds') {
+          if (!useGameStore.getState().spendDiamonds(cost)) return false
+        } else {
+          if (s.coins < cost) return false
+          set({ coins: s.coins - cost })
+        }
+        set((cur) => ({ upgrades: { ...cur.upgrades, [id]: (cur.upgrades[id] ?? 0) + 1 } }))
         return true
+      },
+
+      fulfillOrder: (id) => {
+        const s = get()
+        const order = s.orders.find((o) => o.id === id)
+        if (!order) return false
+        const gs = useGameStore.getState()
+        if ((gs.inventory[order.cropId] ?? 0) < order.qty) return false
+        gs.takeItem(order.cropId, order.qty)
+        gs.addDiamonds(order.diamonds)
+        const seq = s.orderSeq
+        set({
+          coins: s.coins + order.coins,
+          totalEarned: s.totalEarned + order.coins,
+          orders: s.orders.map((o) => (o.id === id ? makeOrder(s.totalEarned + order.coins, seq) : o)),
+          orderSeq: seq + 1,
+        })
+        return true
+      },
+
+      rerollOrder: (id) => {
+        const s = get()
+        const seq = s.orderSeq
+        set({
+          orders: s.orders.map((o) => (o.id === id ? makeOrder(s.totalEarned, seq) : o)),
+          orderSeq: seq + 1,
+        })
       },
 
       // Auto-harvest (Комбайн) + auto-sell (Грузовик). Only writes on change.
       runAuto: () => {
         const s = get()
-        let plots = s.plots
-        let barn = s.barn
-        let changed = false
+        const gs = useGameStore.getState()
 
         if ((s.upgrades.harvester ?? 0) > 0) {
           const now = Date.now()
-          const golden = (s.upgrades.golden ?? 0) > 0
+          const goldenOwned = (s.upgrades.golden ?? 0) > 0
+          const chance = treasureChance(s.upgrades)
           let nextPlots: Plot[] | null = null
-          const nextBarn: Record<string, number> = { ...barn }
-          for (let i = 0; i < plots.length; i++) {
-            const p = plots[i]
+          for (let i = 0; i < s.plots.length; i++) {
+            const p = s.plots[i]
             if (p.crop && isRipe(p, s.upgrades, now)) {
-              const amount = golden && Math.random() < 0.25 ? 2 : 1
-              nextBarn[p.crop] = (nextBarn[p.crop] ?? 0) + amount
-              if (!nextPlots) nextPlots = plots.slice()
+              const amount = goldenOwned && Math.random() < 0.25 ? 2 : 1
+              gs.addItem(p.crop, amount)
+              const t = rollTreasure(chance)
+              if (t) gs.addItem(t, 1)
+              if (!nextPlots) nextPlots = s.plots.slice()
               nextPlots[i] = emptyPlot()
             }
           }
-          if (nextPlots) {
-            plots = nextPlots
-            barn = nextBarn
-            changed = true
-          }
+          if (nextPlots) set({ plots: nextPlots })
         }
 
-        let coins = s.coins
-        let totalEarned = s.totalEarned
-        if ((s.upgrades.delivery ?? 0) > 0 && barnCount(barn) > 0) {
-          const earned = barnValue(barn, s.upgrades)
-          if (earned > 0) {
-            coins += earned
-            totalEarned += earned
-            barn = {}
-            changed = true
-          }
+        if ((s.upgrades.delivery ?? 0) > 0) {
+          get().sellAll()
         }
-
-        if (changed) set({ plots, barn, coins, totalEarned })
       },
 
       reset: () => set(initialData()),
     }),
-    { name: 'tycoon-farm-v1', version: 1 },
+    {
+      name: 'tycoon-farm-v1',
+      version: 2,
+      // v1 stored a local `barn`; harvested crops now live in the shared
+      // inventory, so drop it and let init() seed the new order board.
+      migrate: (persisted) => {
+        const s = (persisted ?? {}) as Partial<FarmData> & { barn?: unknown }
+        delete s.barn
+        if (!Array.isArray(s.orders)) s.orders = []
+        if (typeof s.orderSeq !== 'number') s.orderSeq = 0
+        return s as FarmData
+      },
+    },
   ),
 )
 

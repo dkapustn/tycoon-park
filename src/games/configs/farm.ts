@@ -43,5 +43,6 @@ export const farmConfig: GameConfig = {
     text: 'Ты превратил пустырь в процветающую ферму. Амбары ломятся от урожая, а соседи завидуют!',
   },
   starReward: 3,
+  diamondReward: 15,
   implemented: true,
 }

@@ -41,6 +41,8 @@ export interface FarmUpgradeDef {
   baseCost: number
   /** Multiplicative cost growth per level (ignored for one-shot upgrades). */
   costGrowth: number
+  /** Currency the upgrade is bought with. Defaults to coins. */
+  currency?: 'coins' | 'diamonds'
   describe: (nextLevel: number) => string
 }
 
@@ -90,6 +92,27 @@ export const FARM_UPGRADES: FarmUpgradeDef[] = [
     costGrowth: 1,
     describe: () => 'Шанс 25% собрать двойной урожай',
   },
+  // --- Premium upgrades, bought with 💎 diamonds (earned from treasures) ---
+  {
+    id: 'rainbow',
+    name: 'Радужные семена',
+    emoji: '🌈',
+    maxLevel: 3,
+    baseCost: 12,
+    costGrowth: 1.8,
+    currency: 'diamonds',
+    describe: (lvl) => `Урожай дороже (уровень ${lvl}, +25%)`,
+  },
+  {
+    id: 'lucky',
+    name: 'Талисман удачи',
+    emoji: '🍀',
+    maxLevel: 3,
+    baseCost: 8,
+    costGrowth: 2,
+    currency: 'diamonds',
+    describe: (lvl) => `Чаще находишь ценности (уровень ${lvl})`,
+  },
 ]
 
 const UPGRADE_BY_ID = new Map(FARM_UPGRADES.map((u) => [u.id, u]))
@@ -113,7 +136,33 @@ export function growthMult(upgrades: Record<string, number>): number {
 }
 
 export function sellMult(upgrades: Record<string, number>): number {
-  return 1 + 0.15 * (upgrades.stall ?? 0)
+  return 1 + 0.15 * (upgrades.stall ?? 0) + 0.25 * (upgrades.rainbow ?? 0)
+}
+
+/** 0..1 chance that harvesting a crop also digs up a treasure. */
+export function treasureChance(upgrades: Record<string, number>): number {
+  const base = 0.04
+  const lucky = 0.05 * (upgrades.lucky ?? 0)
+  const golden = (upgrades.golden ?? 0) > 0 ? 0.03 : 0
+  return Math.min(0.35, base + lucky + golden)
+}
+
+/** Market value of all farm crops sitting in the shared inventory. */
+export function farmStashValue(inventory: Record<string, number>, upgrades: Record<string, number>): number {
+  const mult = sellMult(upgrades)
+  let sum = 0
+  for (const c of CROPS) {
+    const n = inventory[c.id] ?? 0
+    if (n > 0) sum += c.sellValue * n * mult
+  }
+  return Math.round(sum)
+}
+
+/** Count of farm crops sitting in the shared inventory. */
+export function farmStashCount(inventory: Record<string, number>): number {
+  let n = 0
+  for (const c of CROPS) n += inventory[c.id] ?? 0
+  return n
 }
 
 /** Cap on how much watering can shave off a single crop (fraction of grow time). */
