@@ -4,6 +4,7 @@ import { GAMES, GAME_ORDER } from '../../games/registry'
 import { useGameStore } from '../../store/useGameStore'
 import { useNav } from '../../store/useNav'
 import { levelFromXp } from '../../meta/progress'
+import { rankForLevel } from '../../meta/ranks'
 import { ACHIEVEMENTS, metricValue } from '../../meta/achievements'
 import type { AchievementContext } from '../../meta/achievements'
 import { formatNumber } from '../../lib/format'
@@ -29,10 +30,12 @@ export function Hub() {
   const openInventory = useNav((s) => s.openInventory)
   const openAchievements = useNav((s) => s.openAchievements)
   const openShop = useNav((s) => s.openShop)
+  const openProfile = useNav((s) => s.openProfile)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dailyOpen, setDailyOpen] = useState(false)
 
   const lvl = levelFromXp(meta.stats.coinsEarned)
+  const rank = rankForLevel(lvl.level)
   const dailyAvailable = meta.daily.lastClaim !== todayStr()
 
   const ctx: AchievementContext = {
@@ -56,28 +59,34 @@ export function Hub() {
       <Header onSettings={() => setSettingsOpen(true)} />
       <div className="scroll-y flex-1 pl-safe pr-safe">
         <div className="mx-auto w-full max-w-3xl px-4 pb-10 sm:px-5">
-          {/* Tycoon level hero */}
-          <motion.div
+          {/* Profile hero — tap to open profile */}
+          <motion.button
+            onClick={openProfile}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-            className="mb-3 overflow-hidden rounded-4xl bg-gradient-to-br from-white/15 to-white/5 p-4 shadow-card"
+            whileTap={{ scale: 0.98 }}
+            className="mb-3 block w-full overflow-hidden rounded-4xl bg-gradient-to-br from-white/15 to-white/5 p-4 text-left shadow-card tap-none"
           >
             <div className="flex items-center gap-3">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl grad-accent text-2xl font-extrabold shadow-pop">
-                {lvl.level}
+              <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-full grad-accent text-3xl shadow-pop">
+                {meta.profile.avatar}
+                <span className="absolute -bottom-1 -right-1 grid h-6 min-w-6 place-items-center rounded-full bg-black/70 px-1 font-display text-[11px] font-bold tabular-nums">
+                  {lvl.level}
+                </span>
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-display text-lg font-bold leading-tight">🏙️ Тайкун-магнат</div>
+                <div className="truncate font-display text-lg font-bold leading-tight">{meta.profile.name}</div>
                 <div className="text-xs text-white/60">
-                  Уровень {lvl.level} · до след. {formatNumber(Math.ceil(lvl.span - lvl.into))} 🪙
+                  {rank.emoji} {rank.title} · до {lvl.level + 1} ур. {formatNumber(Math.ceil(lvl.span - lvl.into))} 🪙
                 </div>
                 <div className="mt-1.5">
                   <ProgressBar value={lvl.progress} />
                 </div>
               </div>
+              <span className="shrink-0 text-2xl text-white/30">›</span>
             </div>
-          </motion.div>
+          </motion.button>
 
           {/* Meta actions */}
           <div className="mb-4 grid grid-cols-4 gap-2">

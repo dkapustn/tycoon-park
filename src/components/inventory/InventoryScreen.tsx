@@ -9,6 +9,7 @@ import { sfx } from '../../lib/sound'
 import { haptic } from '../../lib/haptics'
 import { burst } from '../../lib/confetti'
 import { StatBadge } from '../ui/StatBadge'
+import { ScreenHeader } from '../ui/ScreenHeader'
 import { cn } from '../../lib/cn'
 
 type Tab = 'all' | ItemCategory
@@ -55,19 +56,11 @@ export function InventoryScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="app-bg absolute inset-0 flex flex-col">
-      <header className="pl-safe pr-safe pt-safe">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <button
-            onClick={onBack}
-            aria-label="Назад"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/12 text-2xl leading-none active:scale-95 tap-none"
-          >
-            ‹
-          </button>
-          <div className="flex-1 truncate text-center font-display text-lg font-bold">🎒 Инвентарь</div>
-          <StatBadge emoji="💎" value={formatNumber(diamonds)} />
-        </div>
-      </header>
+      <ScreenHeader
+        title="🎒 Инвентарь"
+        onBack={onBack}
+        right={<StatBadge emoji="💎" value={formatNumber(diamonds)} />}
+      />
 
       {/* Tabs */}
       <div className="px-4 pt-1">

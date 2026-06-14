@@ -7,6 +7,8 @@ export type Screen =
   | { name: 'inventory' }
   | { name: 'achievements' }
   | { name: 'shop' }
+  | { name: 'profile' }
+  | { name: 'stats' }
 
 interface NavState {
   screen: Screen
@@ -15,6 +17,8 @@ interface NavState {
   openInventory: () => void
   openAchievements: () => void
   openShop: () => void
+  openProfile: () => void
+  openStats: () => void
   goHome: () => void
 }
 
@@ -41,6 +45,14 @@ export const useNav = create<NavState>((set) => ({
   openShop: () => {
     history.pushState({ nav: 'shop' }, '')
     set({ screen: { name: 'shop' } })
+  },
+  openProfile: () => {
+    history.pushState({ nav: 'profile' }, '')
+    set({ screen: { name: 'profile' } })
+  },
+  openStats: () => {
+    history.pushState({ nav: 'stats' }, '')
+    set({ screen: { name: 'stats' } })
   },
   goHome: () => set({ screen: { name: 'hub' } }),
 }))

@@ -20,6 +20,12 @@ import { useToast } from './useToast'
 export interface Settings {
   sound: boolean
   reducedMotion: boolean
+  haptics: boolean
+}
+
+export interface Profile {
+  name: string
+  avatar: string
 }
 
 export interface DailyState {
@@ -43,6 +49,9 @@ export interface Meta {
   daily: DailyState
   /** Highest level we've already paid the level-up bonus for. */
   rewardedLevel: number
+  profile: Profile
+  /** Timestamp the save was first created ("member since"). */
+  createdAt: number
   settings: Settings
 }
 
@@ -90,6 +99,8 @@ interface StoreState {
   buyBoost: (id: string) => boolean
   claimAchievement: (id: string) => boolean
   claimDaily: () => DailyReward | null
+  setProfileName: (name: string) => void
+  setAvatar: (avatar: string) => void
 }
 
 function defaultMeta(): Meta {
@@ -103,7 +114,9 @@ function defaultMeta(): Meta {
     claimed: [],
     daily: { lastClaim: '', streak: 0 },
     rewardedLevel: 0,
-    settings: { sound: true, reducedMotion: false },
+    profile: { name: 'Магнат', avatar: '🧑‍💼' },
+    createdAt: Date.now(),
+    settings: { sound: true, reducedMotion: false, haptics: true },
   }
 }
 
@@ -374,10 +387,19 @@ export const useGameStore = create<StoreState>()(
         }))
         return { diamonds, itemId, streak }
       },
+
+      setProfileName: (name) => {
+        const trimmed = name.trim().slice(0, 18) || 'Магнат'
+        set((s) => ({ meta: { ...s.meta, profile: { ...s.meta.profile, name: trimmed } } }))
+      },
+
+      setAvatar: (avatar) => {
+        set((s) => ({ meta: { ...s.meta, profile: { ...s.meta.profile, avatar } } }))
+      },
     }),
     {
       name: 'tycoon-arcade-v1',
-      version: 3,
+      version: 4,
       partialize: (s) => ({ meta: s.meta, games: s.games, inventory: s.inventory }),
       migrate: (persisted) => {
         const s = (persisted ?? {}) as { meta?: Partial<Meta>; inventory?: Record<string, number> }
@@ -388,6 +410,8 @@ export const useGameStore = create<StoreState>()(
         m.claimed = Array.isArray(s.meta?.claimed) ? s.meta!.claimed! : []
         m.daily = s.meta?.daily ?? { lastClaim: '', streak: 0 }
         m.settings = { ...base.settings, ...(s.meta?.settings ?? {}) }
+        m.profile = { ...base.profile, ...(s.meta?.profile ?? {}) }
+        m.createdAt = s.meta?.createdAt ?? base.createdAt
         // Don't retro-pay level bonuses for untracked past earnings.
         m.rewardedLevel = levelFromXp(m.stats.coinsEarned).level
         return { meta: m, inventory: s.inventory ?? {} } as Partial<StoreState> as StoreState

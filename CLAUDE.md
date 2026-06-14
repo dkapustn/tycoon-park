@@ -1,8 +1,10 @@
 # Тайкун-Парк — гайд для Claude Code
 
-PWA-аркада из тематических idle-clicker тайкунов. Витрина игр: открыта первая
-(Ферма), остальные открываются по цепочке после прохождения. Подробности для
-людей — в `README.md`. Здесь — то, что важно следующей сессии Claude.
+PWA-аркада из 5 тематических мини-игр-тайкунов (НЕ кликеры) с общим мета-слоем
+(уровень магната, достижения, лавка бустов, ежедневка, профиль, общий инвентарь
+и алмазы). Витрина: открыта первая (Ферма), остальные открываются по цепочке
+после прохождения. Подробности для людей — в `README.md`. Здесь — то, что важно
+следующей сессии Claude.
 
 ## Стек / расположение
 - Папка: `C:\cabbage\Projects\tycoon-arcade`. Vite + React 19 + TS (строгий:
@@ -11,13 +13,16 @@ PWA-аркада из тематических idle-clicker тайкунов. В
 - Tailwind v3, Framer Motion, Zustand(+persist), canvas-confetti, vite-plugin-pwa.
 
 ## Архитектура (data-driven)
-- **Все игры рендерит один `<IdleGame config>`** (`components/game/IdleGame.tsx`).
-  Игра = объект `GameConfig` (`games/types.ts`). Добавить игру = новый файл в
-  `games/configs/` + запись в массив `GAMES` (`games/registry.ts`); **порядок в
-  массиве = цепочка разблокировки**. `implemented:false` → экран «Скоро».
+- **Игра = объект `GameConfig`** (`games/types.ts`) в массиве `GAMES`
+  (`games/registry.ts`); **порядок в массиве = цепочка разблокировки**. Поле
+  `kind` выбирает движок (см. ниже). Добавить игру = новый конфиг в
+  `games/configs/` + запись в `GAMES` (+ свой `kind`/компонент/стор для мини-игры).
+  `implemented:false` → экран «Скоро» (сейчас таких нет — все 5 реализованы).
 - Состояние: `store/useGameStore.ts` — один persist-ключ `tycoon-arcade-v1`
-  (`meta{unlocked,completed,stars,diamonds,settings}` + `games[id]{...}` +
-  `inventory{itemId:qty}`). Производные — в `games/engine/selectors.ts`.
+  (версия **4**). Хранит `meta{unlocked,completed,stars,diamonds,stats,boosts,
+  claimed,daily,rewardedLevel,profile,createdAt,settings}`, `games[id]{...}`
+  (для idle-движка) и `inventory{itemId:qty}`. Производные idle — в
+  `games/engine/selectors.ts`. `migrate` backfill'ит все новые поля из дефолтов.
 - **Общая экономика (между всеми играми).** В `useGameStore`:
   - `meta.diamonds` — общая премиум-валюта 💎. Начисляется за прохождение
     (`cfg.diamondReward`) и за продажу «ценностей» из инвентаря. Тратится на
@@ -27,15 +32,16 @@ PWA-аркада из тематических idle-clicker тайкунов. В
     предметов: `items/items.ts` (`ItemDef{category,source,rarity,diamondValue}`,
     `CATEGORY_TABS` = вкладки, `rollTreasure`). Экран: `components/inventory/
     InventoryScreen.tsx` (вкладки по категориям; «ценности» продаются за 💎).
-    Навигация — `useNav` экран `inventory`. Версия persist поднята до 2 (миграция
-    добавляет diamonds/inventory).
-- **Мета-прогресс (надстройка над всеми играми).** `meta` (persist v3) хранит
-  `stats` (кросс-игровые счётчики), `boosts` (вечные апгрейды), `claimed`
-  (достижения), `daily`, `rewardedLevel`. Чистые хелперы — `meta/progress.ts`.
+    Навигация — `useNav` экран `inventory`.
+- **Мета-прогресс (надстройка над всеми играми).** `meta` хранит `stats`
+  (кросс-игровые счётчики), `boosts` (вечные апгрейды), `claimed` (достижения),
+  `daily`, `rewardedLevel`, `profile`, `createdAt`. Чистые хелперы — `meta/progress.ts`.
   - `stats` (тип `Stats`): `harvested/cropsSold/ordersFilled/treasuresFound/
-    coinsEarned/served/vipServed/giftsReceived/diamondsEarned`. Игры зовут
+    coinsEarned/served/vipServed/giftsReceived/diamondsEarned/pizzasBaked/
+    perfectBakes/oresMined/pastriesSold`. Игры зовут
     `useGameStore.getState().bumpStat(key, n)` на ДИСКРЕТНЫХ событиях (продажа,
-    сдача заказа, подача гостя) — НЕ в тиках по чуть-чуть.
+    сдача заказа, подача гостя, разбитие жилы) — НЕ в тиках по чуть-чуть.
+    Новый стат-ключ ⇒ добавить в `Stats`+`emptyStats()` (миграция сама зальёт 0).
   - **Уровень магната**: `levelFromXp(stats.coinsEarned)` — кривая `70*1.45^L`.
     `bumpStat('coinsEarned')` сам начисляет 💎 за новые уровни (`rewardedLevel`,
     `levelReward`) и пушит тост.
@@ -51,12 +57,22 @@ PWA-аркада из тематических idle-clicker тайкунов. В
   - **Ежедневка**: `claimDaily()` (стрик по датам) → 💎 + предмет. `DailyModal`.
   - **Тосты**: `store/useToast.ts` + `components/ui/Toasts.tsx` (примонтирован в
     `App`). Сторы могут пушить через `useToast.getState().push`.
-  - Навигация: экраны `achievements`/`shop` в `useNav`. Хаб — «домашняя база»
-    с уровнем, рядом действий (🎁🏆💠🎒) и сеткой игр.
-- Навигация: `store/useNav.ts` — state-based (`hub`/`game`/`soon`) + history,
-  чтобы работала кнопка «назад». В шапке игры — своя кнопка ‹ (нужна для iOS).
-- Цикл: `games/engine/useIdleLoop.ts` — RAF-тик (коммит ~10/с) + капнутый
-  офлайн-докоп (≤120с). Тап-цель ловит `pointerdown` (не `click`!).
+  - **Профиль/Статистика/Настройки**: `meta.profile{name,avatar}` (экшены
+    `setProfileName/setAvatar`), `meta.createdAt` («в игре с …»), `meta.settings
+    {sound,reducedMotion,haptics}`. Ранги/аватары — `meta/ranks.ts`
+    (`rankForLevel`, `AVATARS`). Экраны `ProfileScreen` (аватар-пикер + ник +
+    ранг + плитки + «мои бизнесы»), `StatsScreen` (все `stats` по секциям),
+    sheet `SettingsSheet` (тумблеры + ссылки на профиль/стату + сброс). Общий
+    хедер под-экранов — `components/ui/ScreenHeader.tsx`.
+  - Навигация: экраны `achievements/shop/profile/stats` в `useNav`. Хаб —
+    «домашняя база»: профиль-карточка (тап → профиль) + ряд действий
+    (🎁🏆💠🎒) + сетка игр. Шапка хаба — `Header` (⭐/💎/⚙️).
+- Навигация: `store/useNav.ts` — state-based (`hub/game/soon/inventory/
+  achievements/shop/profile/stats`) + history, чтобы работала кнопка «назад».
+  В шапке под-экрана — своя кнопка ‹ (нужна для iOS); общий `ScreenHeader`.
+- `idle`-движок (`components/game/IdleGame.tsx` + `games/engine/useIdleLoop.ts`,
+  RAF-тик) сейчас НЕ используется ни одной игрой, но оставлен как запасной
+  `kind:'idle'`. Тап-цели ловят `pointerdown` (не `click`!).
 - **Мини-игры (не кликеры).** У `GameConfig` есть поле `kind?: 'idle'|'farm'|'coffee'|'pizza'|'mine'|'bakery'`.
   Все 5 игр витрины — настоящие мини-игры (тизеров/`teasers.ts` больше нет).
   Роутинг — `GameScreen` в `App.tsx` (switch по `kind`); `idle` → старый
@@ -66,9 +82,10 @@ PWA-аркада из тематических idle-clicker тайкунов. В
   - Данные/экономика: `games/farm/crops.ts` (культуры `CROPS`, улучшения
     `FARM_UPGRADES`, цена грядки, множители роста/продажи, лимит полива).
   - Состояние: ОТДЕЛЬНЫЙ стор `store/useFarmStore.ts`, свой persist-ключ
-    `tycoon-farm-v1` (`coins,totalEarned,plots[],barn,upgrades,selectedSeed`).
-    Рост — по таймстемпам (`plantedAt+boostMs`), поэтому идёт и оффлайн; чистые
-    селекторы `plotProgress/isRipe/barnValue` экспортируются оттуда же.
+    `tycoon-farm-v1` (`coins,totalEarned,plots[],upgrades,selectedSeed,orders`).
+    Рост — по таймстемпам (`plantedAt+boostMs`), поэтому идёт и оффлайн;
+    селекторы `plotProgress/isRipe` тут, `farmStashValue/farmStashCount` —
+    в `crops.ts` (урожай хранится в общем `inventory`, не в farm-сторе).
     Старт: `coins:60` (иначе нечем купить первое семя!). Dev-хук `window.__farm`.
   - Луп: `games/farm/useFarmTick.ts` — тик ~4/с (анимация роста + автосбор
     `Комбайн`/автопродажа `Грузовик`). Компоненты: `components/game/farm/`
@@ -165,10 +182,14 @@ PWA-аркада из тематических idle-clicker тайкунов. В
   `__store.getState()`/localStorage, а не по тексту сразу.
 
 ## Экономика / калибровка
-- Цель каждой игры ~8–10 мин активной игры. Инструмент: `npm run sim`
-  (`scripts/gen-icons.mjs` — иконки; `scripts/sim.mjs` — симулятор тайминга).
-  При смене чисел в `configs/*.ts` обнови экономику и в `sim.mjs`, прогони.
-- Ферма: goal 80k (~8 мин). Кофейня: goal 95k. Кривая роста ×1.13–1.17.
+- Цель каждой мини-игры — ~10–12 мин активной игры. `scripts/sim.mjs` — для
+  СТАРОЙ idle-модели (мини-игры им НЕ покрываются). Баланс мини-игр калибрую
+  одноразовым sim-скриптом под конкретную механику (модель «посадил-собрал-
+  продал» / «очередь» / «прожарка» / «жилы» / «спрос-предложение»), прогоняю,
+  числа вношу в `games/<game>/*.ts` + `goal` в `configs/<game>.ts`.
+- Текущие цели (`totalEarned`): Ферма 80k, Кофейня 65k, Пиццерия 70k, Шахта 90k,
+  Пекарня 95k. У всех мини-игр ранний старт «снаппи» (первый апгрейд ~20–30с),
+  длину набирает середина/конец.
 
 ## iOS PWA (уже учтено — не сломать)
 - `#root` = `position:fixed; inset:0` (обход клиппинга `100dvh` в standalone).
@@ -179,5 +200,9 @@ PWA-аркада из тематических idle-clicker тайкунов. В
 - Иконки: `public/icon.svg` (источник) → `npm run icons` → `public/icons/*.png`.
 
 ## Деплой
-- `npm run build` → статика в `dist/` (`base:'./'`). GitHub Pages или Vercel
-  (preset Vite). PWA на iPhone: Safari → «На экран Домой».
+- `npm run build` → статика в `dist/` (`base:'./'`). Хостинг — **Vercel**
+  (preset Vite), прод-ветка = **`main`**. ⚠️ Работаем в фиче-ветке
+  `claude/...`; чтобы прод на Vercel обновился, ветку надо влить в `main`
+  (обычно fast-forward) и запушить `main` — пуш в фиче-ветку прод НЕ обновляет.
+- PWA на iPhone: Safari → «На экран Домой». SW `autoUpdate` → после деплоя
+  старая версия может держаться из кэша; обновить страницу/переустановить ярлык.

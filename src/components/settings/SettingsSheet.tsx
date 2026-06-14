@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useGameStore } from '../../store/useGameStore'
+import { useNav } from '../../store/useNav'
 import { cn } from '../../lib/cn'
 
 function Switch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -26,6 +27,13 @@ function Switch({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const settings = useGameStore((s) => s.meta.settings)
   const setSetting = useGameStore((s) => s.setSetting)
+  const openProfile = useNav((s) => s.openProfile)
+  const openStats = useNav((s) => s.openStats)
+
+  const go = (fn: () => void) => {
+    onClose()
+    fn()
+  }
 
   const resetAll = () => {
     if (confirm('Сбросить весь прогресс? Это нельзя отменить.')) {
@@ -52,7 +60,22 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             transition={{ type: 'spring', stiffness: 260, damping: 28 }}
           >
             <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/20" />
-            <h2 className="mb-2 font-display text-xl font-bold">Настройки</h2>
+            <h2 className="mb-3 font-display text-xl font-bold">Настройки</h2>
+
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => go(openProfile)}
+                className="rounded-2xl bg-white/10 py-3 font-display font-semibold tap-none active:scale-95"
+              >
+                👤 Профиль
+              </button>
+              <button
+                onClick={() => go(openStats)}
+                className="rounded-2xl bg-white/10 py-3 font-display font-semibold tap-none active:scale-95"
+              >
+                📊 Статистика
+              </button>
+            </div>
 
             <div className="flex items-center justify-between gap-4 py-3">
               <div>
@@ -60,6 +83,14 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
                 <div className="text-xs text-white/55">Клики, покупки, победы</div>
               </div>
               <Switch checked={settings.sound} onChange={(v) => setSetting('sound', v)} />
+            </div>
+            <div className="h-px bg-white/10" />
+            <div className="flex items-center justify-between gap-4 py-3">
+              <div>
+                <div className="font-semibold">📳 Вибрация</div>
+                <div className="text-xs text-white/55">Тактильный отклик на действия</div>
+              </div>
+              <Switch checked={settings.haptics} onChange={(v) => setSetting('haptics', v)} />
             </div>
             <div className="h-px bg-white/10" />
             <div className="flex items-center justify-between gap-4 py-3">
@@ -76,7 +107,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             >
               Сбросить прогресс
             </button>
-            <p className="mt-4 text-center text-xs text-white/35">Тайкун-Парк · v1.0</p>
+            <p className="mt-4 text-center text-xs text-white/35">Тайкун-Парк · v1.1</p>
           </motion.div>
         </motion.div>
       )}

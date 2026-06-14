@@ -17,6 +17,8 @@ import { ComingSoon } from './components/game/ComingSoon'
 import { InventoryScreen } from './components/inventory/InventoryScreen'
 import { AchievementsScreen } from './components/meta/AchievementsScreen'
 import { MagnateShopScreen } from './components/meta/MagnateShopScreen'
+import { ProfileScreen } from './components/meta/ProfileScreen'
+import { StatsScreen } from './components/meta/StatsScreen'
 import { Toasts } from './components/ui/Toasts'
 
 function GameScreen({ id, onExit }: { id: string; onExit: () => void }) {
@@ -33,13 +35,12 @@ export default function App() {
   const screen = useNav((s) => s.screen)
   const sound = useGameStore((s) => s.meta.settings.sound)
   const reducedMotion = useGameStore((s) => s.meta.settings.reducedMotion)
+  const haptics = useGameStore((s) => s.meta.settings.haptics)
 
   // Keep side-effect libs in sync with persisted settings.
   useEffect(() => setSoundEnabled(sound), [sound])
-  useEffect(() => {
-    setHapticsEnabled(!reducedMotion)
-    setConfettiReduced(reducedMotion)
-  }, [reducedMotion])
+  useEffect(() => setHapticsEnabled(haptics), [haptics])
+  useEffect(() => setConfettiReduced(reducedMotion), [reducedMotion])
 
   // Device / browser back button returns to the hub.
   useEffect(() => {
@@ -68,6 +69,8 @@ export default function App() {
           {screen.name === 'inventory' && <InventoryScreen onBack={back} />}
           {screen.name === 'achievements' && <AchievementsScreen onBack={back} />}
           {screen.name === 'shop' && <MagnateShopScreen onBack={back} />}
+          {screen.name === 'profile' && <ProfileScreen />}
+          {screen.name === 'stats' && <StatsScreen />}
         </motion.div>
       </AnimatePresence>
       <Toasts />
